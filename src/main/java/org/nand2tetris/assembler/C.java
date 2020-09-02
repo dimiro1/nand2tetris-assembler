@@ -1,12 +1,6 @@
 package org.nand2tetris.assembler;
 
-/**
- * C instruction;
- * Examples:
- * `D=A`
- * `0;JMP`
- * `ADM=A;JEQ`
- */
+/** C instruction; Examples: `D=A` `0;JMP` `ADM=A;JEQ` */
 class C implements Instruction {
     private final Comp comp;
     private final Dest dest;
@@ -38,13 +32,7 @@ class C implements Instruction {
 
     @Override
     public String toBinaryString() {
-        return String.format(
-                "111%s%s%s", this.comp, this.dest, this.jump);
-    }
-
-    @Override
-    public Type getType() {
-        return Type.C;
+        return String.format("111%s%s%s", this.comp, this.dest, this.jump);
     }
 
     enum Comp {

@@ -15,8 +15,6 @@ class Parser {
     private final Map<String, C.Comp> compMap;
     private final Map<String, C.Jump> jumpMap;
     private int sourceLineNumber = 0;
-    private int outputLineNumber = 0;
-    private int variableNumber = 16;
 
     public Parser(final InputStream input) {
         this.input = input;
@@ -103,9 +101,13 @@ class Parser {
     }
 
     public List<Instruction> parse() {
-        var instructions = new ArrayList<Instruction>();
+        int outputLineNumber = 0;
+        int variableNumber = 16;
+        var instructionsWithLabels = new ArrayList<Instruction>();
+        var instructionsWithoutLabels = new ArrayList<Instruction>();
         var scanner = new Scanner(this.input).useDelimiter("\n");
 
+        // 1. Parse file
         while (scanner.hasNext()) {
             this.sourceLineNumber++;
             var line = scanner.next();
@@ -115,41 +117,54 @@ class Parser {
             // Ignore empty lines
             if (line.equals("")) {
                 continue;
-            } else if (line.startsWith("(")) {
+            }
+
+            if (line.startsWith("(")) {
                 // label definition
-                parseLabelDeclaration(line);
-                continue;
+                instructionsWithLabels.add(parseLabelDeclaration(line));
             } else if (line.startsWith("@")) {
                 // A instruction
-                instructions.add(parseAInstruction(line));
+                instructionsWithLabels.add(parseAInstruction(line));
             } else {
                 // C instruction
-                instructions.add(parseCInstruction(line));
+                instructionsWithLabels.add(parseCInstruction(line));
             }
-
-            this.outputLineNumber++;
         }
 
-        // Update labels
-        for (var instruction : instructions) {
-            if (A.Variable.class.equals(instruction.getClass())) {
+        // 2. Process labels
+        for (var instruction : instructionsWithLabels) {
+            if (instruction instanceof L) {
+                this.symbols.putIfAbsent(((L) instruction).getSymbol(), outputLineNumber);
+            } else {
+                instructionsWithoutLabels.add(instruction);
+                outputLineNumber++;
+            }
+        }
+
+        // 3. Update variables
+        for (var instruction : instructionsWithoutLabels) {
+            if (instruction instanceof A.Variable) {
                 var i = (A.Variable) instruction;
+                var value = -1;
                 if (this.symbols.containsKey(i.getSymbol())) {
-                    i.setValue(this.symbols.get(i.getSymbol()));
+                    value = this.symbols.get(i.getSymbol());
+                } else {
+                    value = variableNumber++;
+                    this.symbols.put(i.getSymbol(), value);
                 }
+                i.setValue(value);
             }
         }
-        return instructions;
+        return instructionsWithoutLabels;
     }
 
-    private void parseLabelDeclaration(final String line) {
+    private Instruction parseLabelDeclaration(final String line) {
         var matcher = Pattern.compile("\\((.+)\\)").matcher(line);
         if (!matcher.matches()) {
             throw new ParserError(
                     String.format("label expected at line %d", this.sourceLineNumber));
         }
-        var label = matcher.group(1).strip();
-        symbols.put(label, this.outputLineNumber);
+        return new L(matcher.group(1).strip());
     }
 
     private Instruction parseAInstruction(final String line) {
@@ -167,20 +182,12 @@ class Parser {
             }
 
             var symbol = variableMatcher.group(1).strip();
-            var value = 0;
-
-            if (this.symbols.containsKey(symbol)) {
-                value = this.symbols.get(symbol);
-            } else {
-                value = this.variableNumber++;
-                this.symbols.put(symbol, value);
-            }
-            return new A.Variable(symbol, value);
+            return new A.Variable(symbol, -1);
         }
     }
 
     private Instruction parseCInstruction(final String line) {
-        var commandParts = line.split("[=|;]");
+        var commandParts = line.split("[=;]");
         C.Comp decodedComp;
         C.Jump decodedJmp;
         C.Dest decodedDest;

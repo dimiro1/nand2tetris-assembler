@@ -29,7 +29,6 @@ public class CTests {
                 // 0;JMP
                 Arguments.arguments(new C(C.Comp.ZERO, C.Jump.JMP), "1110101010000111"),
                 // M;JGT
-                Arguments.arguments(new C(C.Comp.M, C.Jump.JGT), "1111110000000001")
-        );
+                Arguments.arguments(new C(C.Comp.M, C.Jump.JGT), "1111110000000001"));
     }
 }

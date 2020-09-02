@@ -1,12 +1,7 @@
 package org.nand2tetris.assembler;
 
 public class A {
-    /**
-     * Literal A instruction.
-     * Examples:
-     *  `@1`
-     *  `@2`
-     */
+    /** Literal A instruction. Examples: `@1` `@2` */
     static class Literal implements Instruction {
         private final int value;
 
@@ -18,20 +13,9 @@ public class A {
         public String toBinaryString() {
             return String.format("0%s", Util.toBinary(value, 15));
         }
-
-        @Override
-        public Type getType() {
-            return Type.A;
-        }
     }
 
-    /**
-     * Variable A instruction.
-     * Examples:
-     * `@LABEL`
-     * `@max`
-     * `@min`
-     */
+    /** Variable A instruction. Examples: `@LABEL` `@max` `@min` */
     static class Variable implements Instruction {
         private final String symbol;
         private int value;
@@ -52,11 +36,6 @@ public class A {
         @Override
         public String toBinaryString() {
             return String.format("0%s", Util.toBinary(value, 15));
-        }
-
-        @Override
-        public Type getType() {
-            return Type.A;
         }
     }
 }
